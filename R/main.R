@@ -156,7 +156,21 @@ getAF <- function(f, the.data, ref_cat = NULL,refy=0, cat_confounders=NULL, cont
   colnames(cat_riskfactors) <- the.colnames
   y <- as.character(f)[2]
   y <- the.data[,colnames(the.data)%in%as.vector(y)]
-  
+  ##  remove nas
+  cat_confounders_n <- cat_confounders
+  cont_confounders_n <- cont_confounders
+  cat_riskfactors_n <- cat_riskfactors
+  y_n <- y
+  if(is.null(cat_confounders_n)) cat_confounders_n <- matrix(rep(1,length(y)),ncol=1)
+  if(is.null(cont_confounders_n)) cont_confounders_n <- matrix(rep(1,length(y)),ncol=1)
+  if(is.null(cat_riskfactors_n)) cat_riskfactors_n <- matrix(rep(1,length(y)),ncol=1)
+   if(is.null(y_n)) y_n <- matrix(rep(1,length(y)),ncol=1)
+  bigmat <- cbind(cat_confounders_n,cont_confounders_n,cat_riskfactors_n,y_n)
+  thenas <-  apply(bigmat,1,function(x){sum(is.na(x))>0})
+  cat_confounders <- cat_confounders[!thenas,,drop=FALSE]
+  cont_confounders <- cont_confounders[!thenas,,drop=FALSE]
+  cat_riskfactors <- cat_riskfactors[!thenas,,drop=FALSE]
+   y <- y[!thenas]
   nvar_cat <- ncol(cat_riskfactors)
   the.colnames <- colnames(cat_riskfactors)
   if(is.null(the.colnames)) the.colnames <- paste("riskfactor",1:ncol(cat_riskfactors),sep="")
