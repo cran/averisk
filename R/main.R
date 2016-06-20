@@ -120,7 +120,6 @@ getAF <- function(f, the.data, ref_cat = NULL,refy=0, cat_confounders=NULL, cont
   positions <- numeric(length(cat_riskfactors))
   for(i in 1:length(positions)) positions[i] <- grep(paste("^",cat_riskfactors[i],"$",sep=""),colnames(the.data),perl=TRUE)
   for(i in 1:length(positions)){
-    if(colnames(the.data)[i]!=y){
       # transform categorical variables to numeric codes
       if(is.character(the.data[,positions[i]])){
         if(is.null(ref_cat)) the.data[,positions[i]] <- as.numeric(factor(the.data[,positions[i]]))
@@ -137,24 +136,23 @@ getAF <- function(f, the.data, ref_cat = NULL,refy=0, cat_confounders=NULL, cont
           ref_cat[i] <- 1
         }
       } 
-    }
   }
-
+  
+  cat_riskfactors <- as.matrix(the.data[,positions])
+  colnames(cat_riskfactors) <- colnames(the.data)[positions]
+  
   if(!is.null(cat_confounders)){
     positions <- numeric(length(cat_confounders)) 
     for(i in 1:length(positions)) positions[i] <- grep(paste("^",cat_confounders[i],"$",sep=""),colnames(the.data),perl=TRUE)
     for(i in 1:length(positions)){
       if(is.character(the.data[,positions[i]])) the.data[,positions[i]] <- as.numeric(factor(the.data[,positions[i]]))
-      if(as.factor(the.data[,positions[i]])) the.data[,positions[i]] <- as.numeric(the.data[,positions[i]])
+      if(is.factor(the.data[,positions[i]])) the.data[,positions[i]] <- as.numeric(the.data[,positions[i]])
     }
     cat_confounders <- as.matrix(the.data[,colnames(the.data)%in%cat_confounders])
     
   }
   if(!is.null(cont_confounders)) cont_confounders <- as.matrix(the.data[,colnames(the.data)%in%cont_confounders])
-  the.colnames <- colnames(the.data)[colnames(the.data)%in%cat_riskfactors]
-  cat_riskfactors <- as.matrix(the.data[,colnames(the.data)%in%cat_riskfactors])
-  colnames(cat_riskfactors) <- the.colnames
-  y <- as.character(f)[2]
+    y <- as.character(f)[2]
   y <- the.data[,colnames(the.data)%in%as.vector(y)]
   ##  remove nas
   cat_confounders_n <- cat_confounders
