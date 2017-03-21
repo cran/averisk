@@ -8,7 +8,7 @@ getAF(f, the.data, ref_cat = NULL, refy = 0, cat_confounders = NULL,
   cont_confounders = NULL, prev = NA, allperm = TRUE,
   nsample_perm = 1000, approx_error = NA, ci = FALSE, conf_level = 0.99,
   nsample_var = 100, correction_factor = TRUE, quantile_int = FALSE,
-  sep_est = TRUE)
+  sep_est = TRUE, w = NULL)
 }
 \arguments{
 \item{f}{A formula object specifying a logistic regression model for the risk factors.  See Details for more information.}
@@ -23,7 +23,7 @@ getAF(f, the.data, ref_cat = NULL, refy = 0, cat_confounders = NULL,
 
 \item{cont_confounders}{A character vector indicating categorical variables that need to be adjusted for (excluding risk factors).  Defaults to \code{NULL}.}
 
-\item{prev}{A proportion specifying the percentage of the population that have the disease.  Defaults to \code{NA}.  \code{NA} is appropriate for prospective designs. Prevalence should be specified for case control designs.}
+\item{prev}{A proportion specifying the percentage of the population that have the disease.  Defaults to \code{NA}.  \code{NA} is appropriate for prospective and survey designs. Prevalence should be specified for case control designs.}
 
 \item{allperm}{\code{TRUE} gives an exact calculation of the sample average fraction.  \code{FALSE} gives an approximate calculation.  Defaults to \code{TRUE}.}
 
@@ -42,6 +42,8 @@ getAF(f, the.data, ref_cat = NULL, refy = 0, cat_confounders = NULL,
 \item{quantile_int}{confidence interval is calculated from empirical quantiles of the monte carlo simulated AFs.  Defaults to \code{FALSE}.   Only necessary to specify when \code{ci=TRUE}.  See Details for more information.}
 
 \item{sep_est}{The point estimate of the AF in a separate calculation to the confidence interval.  Defaults to \code{TRUE}   (Only necessary to specify when \code{ci=TRUE})}
+
+\item{w}{Optional weighting vector for survey data  Defaults to \code{NULL}}
 }
 \value{
 If \code{ci=TRUE}, a 3 x (K+1) matrix, where K is the number of risk factors.  The first row represents the point estimate for the AF, and the second and third rows lower and upper confidnece bounds.  If \code{ci=FALSE}, a (K+1)-dimensional vector with the calculated point estimates for the AF is returned.
@@ -78,58 +80,59 @@ colnames(the.d) <- c("y","urban.rural","smoking.category","occupational.exposure
 # Just get the estimate (no confidence interval)
 getAF(y~urban.rural+smoking.category+occupational.exposure,the.d,prev=0.09)
 
-## other examples -  uncomment these lines to run them.
 ## find the average fraction and associated monte-carlo calculated 99\% confidence 
 ##  No need for approximation here.  Assume population prevalence is 9 percent.
 
-#getAF(y~urban.rural+smoking.category+occupational.exposure,the.d,prev=0.09,ci=TRUE,conf_level=0.99)
+
+getAF(y~urban.rural+smoking.category+occupational.exposure,the.d,prev=0.09,ci=TRUE,conf_level=0.99)
 
 
-## genetic simulation using more risk factors (disease prevalence = 0.01)
+## genetic simulation using more risk factors (disease prevalence = 0.01)  might be slow.
 
-#thevec <- dbinom(0:40, size= 40, prob=0.2, log = FALSE)
-#bin_fun <- function(beta_0){
-# sum(thevec*exp(beta_0+.1*(0:40))/(1+exp(beta_0+.1*(0:40))))-0.01
-#}
-#beta_0 <- uniroot(bin_fun,lower=-8,upper=5)$root
-#total_risk <- (0.01-exp(beta_0)/(1+exp(beta_0)))/0.01
-#risk_per_snp <- total_risk/20
-#case_probabilities <- (thevec*exp(beta_0 + (0:40)*0.1)/(1+exp(beta_0 + (0:40)*0.1)))/0.01
-#control_probabilities <- thevec*1/(1+exp(beta_0 + (0:40)*0.1))/0.99
-#simdata_genetic <- function(ncase,ncontrol){ 
-# numbersnps_case <- sample(0:40,ncase,prob=case_probabilities,replace=TRUE)
-#  numbersnps_control <- sample(0:40,ncase,prob=control_probabilities,replace=TRUE)
-#  case_rows <- cbind(rep(1,ncase),matrix(0,nrow=ncase,ncol=20))
-#  control_rows <- cbind(rep(0,ncase),matrix(0,nrow=ncontrol,ncol=20))
-#  for(i in 1:ncase){
-#    if(numbersnps_case[i]>0){   
-#      positions <- sample(1:40,numbersnps_case[i])  
-#      positions <- ceiling(positions/2)
-#     for(j in 1:length(positions)) case_rows[i,positions[j]+1] <- case_rows[i,positions[j]+1]+1
-#    }
-#  }
-#  for(i in 1:ncontrol){
-#    if(numbersnps_control[i]>0){   
-#      positions <- sample(1:40,numbersnps_control[i])
-#      positions <- ceiling(positions/2)
-#      for(j in 1:length(positions)){
-#          control_rows[i,positions[j]+1]<- control_rows[i,positions[j]+1]+1 
-#      }                                                       
-#    }
-# }
-#  return(rbind(case_rows,control_rows))
-#}
-#the.d <- simdata_genetic(ncase=250, ncontrol=250)
-#colnames(the.d) <- c("y",paste("SNP",1:20,sep=""))
+\dontrun{
+thevec <- dbinom(0:40, size= 40, prob=0.2, log = FALSE)
+bin_fun <- function(beta_0){
+ sum(thevec*exp(beta_0+.1*(0:40))/(1+exp(beta_0+.1*(0:40))))-0.01
+}
+beta_0 <- uniroot(bin_fun,lower=-8,upper=5)$root
+total_risk <- (0.01-exp(beta_0)/(1+exp(beta_0)))/0.01
+risk_per_snp <- total_risk/20
+case_probabilities <- (thevec*exp(beta_0 + (0:40)*0.1)/(1+exp(beta_0 + (0:40)*0.1)))/0.01
+control_probabilities <- thevec*1/(1+exp(beta_0 + (0:40)*0.1))/0.99
+simdata_genetic <- function(ncase,ncontrol){ 
+numbersnps_case <- sample(0:40,ncase,prob=case_probabilities,replace=TRUE)
+ numbersnps_control <- sample(0:40,ncase,prob=control_probabilities,replace=TRUE)
+ case_rows <- cbind(rep(1,ncase),matrix(0,nrow=ncase,ncol=20))
+ control_rows <- cbind(rep(0,ncase),matrix(0,nrow=ncontrol,ncol=20))
+ for(i in 1:ncase){
+   if(numbersnps_case[i]>0){   
+     positions <- sample(1:40,numbersnps_case[i])  
+     positions <- ceiling(positions/2)
+    for(j in 1:length(positions)) case_rows[i,positions[j]+1] <- case_rows[i,positions[j]+1]+1
+   }
+ }
+ for(i in 1:ncontrol){
+   if(numbersnps_control[i]>0){   
+     positions <- sample(1:40,numbersnps_control[i])
+     positions <- ceiling(positions/2)
+     for(j in 1:length(positions)){
+         control_rows[i,positions[j]+1]<- control_rows[i,positions[j]+1]+1 
+     }                                                       
+   }
+}
+ return(rbind(case_rows,control_rows))
+}
+the.d <- simdata_genetic(ncase=250, ncontrol=250)
+colnames(the.d) <- c("y",paste("SNP",1:20,sep=""))
 
 ## Here we just calculate the approximate average fraction
 ## from 50 permutations and no confidence interval.
 ## If CI desired add the argument ci=TRUE and nsample_var to the function. 
 ## 50 permuations is chosen for speed. In reality, 1000 maybe needed
 
-#thesnp <- paste0("SNP", 1:20,sep="")
-#(fmla <- as.formula(paste("y ~ ", paste(thesnp, collapse= "+"))))
-#getAF(fmla, the.d,prev=0.01, allperm=FALSE,nsample_perm=50,ci=FALSE)
+thesnp <- paste0("SNP", 1:20,sep="")
+(fmla <- as.formula(paste("y ~ ", paste(thesnp, collapse= "+"))))
+getAF(fmla, the.d,prev=0.01, allperm=FALSE,nsample_perm=50,ci=FALSE)
 
 ## Instead of specifying the number of permutations, 
 ## you can specify an estimated approximation error. 
@@ -137,13 +140,16 @@ getAF(y~urban.rural+smoking.category+occupational.exposure,the.d,prev=0.09)
 ## approximation error of 0.01 specified for reasons of speed.
 ## In reality, you may want to use a smaller value for approx_error.
 
-#getAF(fmla, the.d,prev=0.01, allperm=FALSE,approx_error=0.01,ci=FALSE)
+getAF(fmla, the.d,prev=0.01, allperm=FALSE,approx_error=0.01,ci=FALSE)
+}
 }
 \author{
 John Ferguson (john.ferguson@nuigalway.ie)
 }
 \references{
 Eide, Geir Egil and Olaf Gefeller.  Sequential and Average Attributable Fractions as Aids in the Selection of Preventative Strategies.  J. Clinical Epidemiology, Vol. 48, No. 5, pp. 645-655, 1995.
+
+Ferguson John, Alvarez Alberto, Newell John, Hinde John and O'Donnell Martin.  Estimating average attributable fractions with confidence intervals for cohort and case control studies.  Statistical Methods in Medical Research, 2016.
 }
 \keyword{getAF}
 

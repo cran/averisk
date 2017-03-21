@@ -1,7 +1,7 @@
-b4205158af5aa717d13b1a1423f388ce *DESCRIPTION
+e4b1a4c58dac15c1c124a3d239be0c4f *DESCRIPTION
 b49dfe8a4541ca8d080e72dc447d8bc4 *NAMESPACE
 31cee00f669cba3b5aa8e786ee0416e5 *R/averisk.R
-09296978941e61b064b096ea67eaff66 *R/internal.R
-917a72bed7d03fa23d773ffb6d5b1eb2 *R/main.R
+e5c5da4dc5776c2fd6b3a68cf8a35222 *R/internal.R
+0869d1581232df7c273a41ca07c405d1 *R/main.R
 592686951f9e5818afd9eb60ac6de12d *man/averisk.Rd
-7478b92e3f6465d2dcb8bbd33a8dfa31 *man/getAF.Rd
+367c7ccb02a726d4a4a57e52643b1ffa *man/getAF.Rd

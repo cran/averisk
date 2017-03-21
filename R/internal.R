@@ -7,12 +7,11 @@ recode <- function(sym_list, ref_sym){
 }
 
 ##  this is just to estimate permuation based variance
-affun_temp <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,allperm=TRUE){
+affun_temp <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,allperm=TRUE,w){
   
   d=model.frame(the.form,the.data)
     
   y <- d[,1]
-  w <- rep(1,length(y))
   if(!is.na(prev)){ 
     
     thenas <- apply(d[,2:ncol(d)],1,function(x){sum(is.na(x))>0})
@@ -37,6 +36,7 @@ affun_temp <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.01
   vars=length(unique(substring(colnames(d)[startcol:ncol(d)],1,3)))
   n=nrow(d)
   obs.cases=sum(d[,1])
+  if(length(unique(w[d[,1]==1]))>0) obs.cases=sum(w*d[,1])
   continuous_indices <-  (startcol-1) + grep("c[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
   lc <- length(continuous_indices)
   ordinal_indices <-  (startcol-1) + grep("o[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
@@ -155,14 +155,13 @@ affun_temp <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.01
 }
 
 
-affun <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,approx_error=0.001,allperm=TRUE){
+affun <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,approx_error=0.001,allperm=TRUE,w){
   
   d=model.frame(the.form,the.data)
   
   
    
   y <- d[,1]
-  w <- rep(1,length(y))
   if(!is.na(prev)){ 
     
     thenas <- apply(d[,2:ncol(d)],1,function(x){sum(is.na(x))>0})
@@ -187,6 +186,7 @@ affun <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,app
   vars=length(unique(substring(colnames(d)[startcol:ncol(d)],1,3)))
   n=nrow(d)
   obs.cases=sum(d[,1])
+  if(length(unique(w[d[,1]==1]))>0) obs.cases=sum(w*d[,1])
   continuous_indices <-  (startcol-1) + grep("c[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
   lc <- length(continuous_indices)
   ordinal_indices <-  (startcol-1) + grep("o[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
@@ -204,7 +204,7 @@ affun <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,app
   if(!allperm){
     
     if(!is.na(approx_error)){
-      est_sd <- affun_temp(the.form,the.data=the.data,nsample_perm = 100,  prev=prev, allperm=allperm)
+      est_sd <- affun_temp(the.form,the.data=the.data,nsample_perm = 100,  prev=prev, allperm=allperm,w=w)
       nsample_perm <- max(ceiling(est_sd^2*1.96^2/approx_error^2))+1 
       print(paste(nsample_perm, " permutations will be performed",sep=""))
     }
@@ -312,13 +312,12 @@ affun <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000,prev=.015,app
   return(prev.cases/obs.cases)
 }
 
-affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_error=NA, nsample_var = 100, prev=0.015, conf_level=0.99, sep_est=FALSE, correction_factor=TRUE,allperm=TRUE, quantile_est=TRUE){
+affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_error=NA, nsample_var = 100, prev=0.015, conf_level=0.99, sep_est=FALSE, correction_factor=TRUE,allperm=TRUE, quantile_est=TRUE,w){
   if(!is.na(approx_error)) sep_est=TRUE
   d=model.frame(the.form,the.data)
   
   chunksize = nsample_perm/nsample_var
   y <- d[,1]
-  w <- rep(1,length(y))
   if(!is.na(prev)){ 
     
     thenas <- apply(d[,2:ncol(d)],1,function(x){sum(is.na(x))>0})
@@ -350,6 +349,7 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
   vars=length(unique(substring(colnames(d)[startcol:ncol(d)],1,3)))
   n=nrow(d)
   obs.cases=sum(d[,1])
+   if(length(unique(w[d[,1]==1]))>0) obs.cases=sum(w*d[,1])
   continuous_indices <-  (startcol-1) + grep("c[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
   lc <- length(continuous_indices)
   ordinal_indices <-  (startcol-1) + grep("o[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
@@ -364,7 +364,7 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
   
   
   if(allperm){
-    PARF <- AF_exact(the.form=the.form,the.data=the.data,prev=prev)
+    PARF <- AF_exact(the.form=the.form,the.data=the.data,prev=prev,w=w)
     the.ests <- matrix(0,nrow=nsample_var,ncol=vars+1) 
     beta_to_use <- MASS::mvrnorm(n = nsample_var, mu=mean_beta , Sigma=cov_beta, tol = 1e-6, empirical = FALSE, EISPACK = FALSE)
     for(l in 1:nsample_var){
@@ -378,6 +378,7 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
       vars=length(unique(substring(colnames(d)[startcol:ncol(d)],1,3)))
       n=nrow(d)
       obs.cases=sum(d[,1])
+           if(length(unique(w[d[,1]==1]))>0) obs.cases=sum(w*d[,1])
       continuous_indices <-  (startcol-1) + grep("c[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
       lc <- length(continuous_indices)
       ordinal_indices <-  (startcol-1) + grep("o[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
@@ -452,7 +453,7 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
     if(!is.na(approx_error))
     {
       ## test
-      est_sd <- affun_temp(the.form,the.data=the.data,nsample_perm = 100,  prev=prev, allperm=allperm)
+      est_sd <- affun_temp(the.form,the.data=the.data,nsample_perm = 100,  prev=prev, allperm=allperm,w=w)
       nsample_perm <- max(ceiling(est_sd^2*1.96^2/approx_error^2))+1 ## so there will be at least 2
       nsample_perm <- max(nsample_perm,nsample_var*2) ##  so a variance can be calculated
       print(paste(nsample_perm, " permutations will be performed",sep=""))
@@ -574,11 +575,11 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
     }
     if(!is.na(approx_error)) # print(paste("estimated approximation error is within", 1.96*sqrt(apply(var.ests,2,mean))/(obs.cases*sqrt(nsample_perm))))
       if(!correction_factor | allperm) the.var <- apply(the.ests,2,var)
-    if(correction_factor & !(allperm)) the.var <- apply(the.ests,2,var)-apply(var.ests,2,mean)/chunksize + apply(var.ests,2,mean)/nsample_perm    ### dangerous to correct for the bias if chunksize is small
+    if(correction_factor & !(allperm)) the.var <- pmax(apply(the.ests,2,var)-apply(var.ests,2,mean)/chunksize + apply(var.ests,2,mean)/nsample_perm,0)    ### dangerous to correct for the bias if chunksize is small
     the.sd <- sqrt(the.var)
     the.mean.est=apply(prev.cases.m.new,2,mean)
     #
-    if(sep_est) PARF=affun(the.form,the.data=the.data,nsample_perm = nsample_perm, prev=prev, allperm=allperm, approx_error=NA)
+    if(sep_est) PARF=affun(the.form,the.data=the.data,nsample_perm = nsample_perm, prev=prev, allperm=allperm, approx_error=NA,w=w)
     if(!sep_est) PARF <- the.mean.est/obs.cases
     names(PARF)=colnames(prev.cases.m.new)
     the.df <- nsample_var - 1
@@ -592,7 +593,7 @@ affun_ci <- function(the.form=NULL,the.data=NULL,nsample_perm = 10000, approx_er
 ###  sampling deciding which risk factors to put in th positions to the  left and their weights.
 
 create_frame <- function(n){
-  if(n==1) return(matrix(c(1,1),nrow=1))
+  if(n==1) return(matrix(c(1,1,0,1),nrow=2,byrow=F))
   n.row <- 2^n
   out <- matrix(0,nrow=n.row,ncol=0)
   for(i in 1:n){
@@ -610,11 +611,10 @@ create_frame <- function(n){
 
 
 
-AF_exact <- function(the.form=NULL,the.data=NULL,prev=0.015){
+AF_exact <- function(the.form=NULL,the.data=NULL,prev=0.015,w){
   
   d=model.frame(the.form,the.data)
   y <- d[,1]
-  w <- rep(1,length(y))
   if(!is.na(prev)){ 
     
     thenas <- apply(d[,2:ncol(d)],1,function(x){sum(is.na(x))>0})
@@ -633,6 +633,7 @@ AF_exact <- function(the.form=NULL,the.data=NULL,prev=0.015){
   vars=length(unique(substring(colnames(d)[startcol:ncol(d)],1,3)))
   n=nrow(d)
   obs.cases=sum(d[,1])
+  if(length(unique(w[d[,1]==1]))>0) obs.cases=sum(w*d[,1])
   continuous_indices <-  (startcol-1) + grep("c[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)
   lc <- length(continuous_indices)
   ordinal_indices <-  (startcol-1) + grep("o[0-9]+_*",unique(substring(colnames(d)[startcol:ncol(d)],1,3)),perl=TRUE)

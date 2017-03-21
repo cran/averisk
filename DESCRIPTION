@@ -2,7 +2,7 @@ Package: averisk
 Type: Package
 Title: Calculation of Average Population Attributable Fractions and
         Confidence Intervals
-Version: 1.0.2
+Version: 1.0.3
 Imports: MASS (>= 7.3.0)
 Date: 2015-10-22
 Authors@R: person("John", "Ferguson", email = "john.ferguson@nuigalway.ie",
@@ -19,7 +19,7 @@ Description: Average population attributable fractions are calculated for a set
 License: CC0
 RoxygenNote: 5.0.1
 NeedsCompilation: no
-Packaged: 2016-06-20 17:37:33 UTC; 0118158S
+Packaged: 2017-03-20 19:20:00 UTC; 0118158S
 Author: John Ferguson [aut, cre]
 Repository: CRAN
-Date/Publication: 2016-06-20 20:21:24
+Date/Publication: 2017-03-21 06:50:31 UTC
